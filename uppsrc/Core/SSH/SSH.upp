@@ -13,9 +13,9 @@ uses(WIN32 | NOSO) plugin/z;
 
 library(POSIX) "crypto ssl z";
 
-library(WIN32) "ssl crypto";
+library(WIN32) "libssl.lib libcrypto.lib";
 
-library(WIN32) "usp10 gdi32 ws2_32";
+library(WIN32) "usp10 gdi32 ws2_32 Wldap32.lib Secur32.lib Crypt32.lib";
 
 link(WIN32 MSC SO) /nodefaultlib:libc;
 
