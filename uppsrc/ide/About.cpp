@@ -11,7 +11,7 @@
 #include <build_info.h>
 #endif
 
-String SplashCtrl::GenerateVersionInfo(bool qtf)
+String SplashCtrl::GenerateVersionInfo(bool qtf, bool about)
 {
 	String h;
 	
@@ -23,23 +23,23 @@ String SplashCtrl::GenerateVersionInfo(bool qtf)
 	if(dr.GetCount() > 8)
 		dr.Trim(8);
 	h << "Revision: ";
-	if(qtf)
+	if(qtf && about)
 		h << "\1[^https://github.com/ultimatepp/ultimatepp/commit/" << rev << "^ ";
 	h << dr;
-	if(qtf)
+	if(qtf && about)
 		h << "]\1";
 	h << separator;
 #endif
 
 	h << "Build: " << GenerateVersionNumber();
 #ifdef bmGIT_BRANCH
-	h << " " << bmGIT_BRANCH;
+	h << " " << bmGIT_BRANCH << "\n";
 #endif
 
 	if(sizeof(void *) == 8)
-		h << " 64 bit";
+		h << "64 bit";
 	else
-		h << " 32 bit";
+		h << "32 bit";
 #ifdef _MSC_VER
 	h << " MSC";
 #endif
@@ -71,9 +71,6 @@ String SplashCtrl::GenerateVersionInfo(bool qtf)
 	h << " SIMD";
 #endif
 
-#ifdef GUI_GTK
-	h << " Gtk";
-#endif
 #ifdef FLATPAK
 	h << " Flatpak";
 #endif
@@ -84,7 +81,10 @@ String SplashCtrl::GenerateVersionInfo(bool qtf)
 #endif
 
 	h << separator;
-	h << GetExeFilePath();
+	String p = GetExeFilePath();
+	if(p.GetCount() > 30)
+		p = ".." + p.Mid(max(p.GetCount() - 30, 0));
+	h << p;
 
 	return h;
 }
@@ -100,7 +100,7 @@ String SplashCtrl::GenerateVersionNumber()
 	return IDE_VERSION;
 }
 
-Size SplashCtrl::MakeLogo(Ctrl& parent, Array<Ctrl>& ctrl)
+Size SplashCtrl::MakeLogo(Ctrl& parent, Array<Ctrl>& ctrl, bool splash)
 {
 	Image logo = IdeImg::logo();
 	Size  isz = logo.GetSize();
@@ -120,7 +120,7 @@ Size SplashCtrl::MakeLogo(Ctrl& parent, Array<Ctrl>& ctrl)
 		}
 
 	String h;
-	h << "[A+50 \1" << GenerateVersionInfo(true) << "\n";
+	h << "[A+65 \1" << GenerateVersionInfo(true, splash) << "\n";
 	h << "Using: " << MemoryUsedKb()
 #ifdef PLATFORM_COCOA
 		<< " KB of U++ heap\n";
@@ -128,12 +128,27 @@ Size SplashCtrl::MakeLogo(Ctrl& parent, Array<Ctrl>& ctrl)
 		<< " KB\n";
 #endif
 	if(items.GetCount())
-		h << "CodeBase: " << classes.GetCount() << " classes, " << items.GetCount() << " items";
+		h << classes.GetCount() << " classes, " << items.GetCount() << " items\n";
 	if(IsUHDMode())
-		h << "UHD mode";
-	v1 = h;
+		h << "UHD ";
+
+#ifdef GUI_GTK
+	if(Ctrl::IsXWayland())
+		h << "XWayland";
+	else
+	if(Ctrl::IsWayland())
+		h << "Wayland";
+	else
+	if(Ctrl::IsX11())
+		h << "X11";
+#endif
+
+#if 0
+	h << "\n1\n2\n3\n4\n5\n6"; // for size testing
+#endif
 	v1.NoSb();
-	v1.HSizePos(DPI(250), DPI(10)).BottomPos(DPI(20), Arial(DPI(20)).GetHeight() * 8);
+	v1 = h;
+	v1.HSizePos(DPI(250), DPI(10)).BottomPos(0, DPI(180));
 	l.Add(v1);
 	parent.Add(ctrl.Create<StaticRect>().Color(White).SizePos());
 	parent.Add(l.TopPos(0, isz.cy).LeftPos(0, isz.cx));
@@ -170,7 +185,7 @@ class AboutDlg : public TopWindow
 public:
 	AboutDlg()
 	{
-		Size isz = SplashCtrl::MakeLogo(*this, ctrl);
+		Size isz = SplashCtrl::MakeLogo(*this, ctrl, true);
 		int cx = min(isz.cx * 2, GetWorkArea().GetWidth());
 		SetRect(0, 0, cx, isz.cy);
 		about.SetQTF(GetTopic("ide/app/About_en-us"), Zoom(DPI(120), 1024));
