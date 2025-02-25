@@ -225,6 +225,9 @@ public:
 	Stream&   operator/(unsigned int& i);
 	Stream&   operator/(long& i);
 	Stream&   operator/(unsigned long& i);
+	
+	Stream&   Serialize64(long& d)           { uint64 m = d; *this % m; d = (long) m; return *this; }
+	Stream&   Serialize64(unsigned long& d)  { uint64 m = d; *this % m; d = (unsigned long) m; return *this; }
 
 	void      Magic(dword magic = 0x7d674d7b);
 
@@ -552,7 +555,6 @@ bool   SaveStream(Stream& out, const String& data);
 
 int64 CopyStream(Stream& dest, Stream& src, int64 count = INT64_MAX);
 
-#ifndef PLATFORM_WINCE
 void    CoutUTF8();
 Stream& Cout();
 Stream& Cerr();
@@ -560,7 +562,6 @@ String  ReadStdIn();
 String  ReadSecret();
 void    EnableEcho(bool b = true);
 void    DisableEcho();
-#endif
 
 Stream& NilStream();
 
