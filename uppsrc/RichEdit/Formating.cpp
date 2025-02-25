@@ -64,6 +64,7 @@ void RichEdit::ApplyFormat(dword charvalid, dword paravalid)
 	}
 	else
 		RefreshBar();
+	SetLastCharFormat(formatinfo);
 }
 
 void RichEdit::ApplyFormatInfo(const RichText::FormatInfo& fi)
@@ -127,7 +128,7 @@ void RichEdit::SetFace()
 void RichEdit::SetHeight()
 {
 	NextUndo();
-	formatinfo.Height(PtToDot(~height));
+	formatinfo.Height(PtToDot(~height, unit));
 	ApplyFormat(RichText::HEIGHT);
 	SetFocus();
 }
@@ -208,6 +209,61 @@ void RichEdit::ReadFormat()
 	ShowFormat();
 }
 
+void RichEdit::SetLastCharFormat()
+{
+	SetLastCharFormat(text.GetRichPos(max(cursor - 1, 0)).format);
+}
+
+void RichEdit::SetLastCharFormat(const RichPara::CharFormat& fmt)
+{
+	last_format = fmt;
+	int isz = DPI(16);
+	int fh = isz;
+	Font fnt = last_format;
+	while(fh >= 0 && fnt.Height(fh).GetCy() > isz)
+		fh--;
+	ImagePainter iw(isz, isz);
+	String txt = "a";
+	if(last_format.capitals) {
+		txt = "A";
+		fh = 5 * fh / 6;
+	}
+	if(last_format.sscript)
+		fh = 4 * fh / 5;
+	fnt.Height(fh);
+	iw.Clear();
+	iw.RoundedRectangle(0.5, 0.5, isz - 0.5, isz - 0.5, DPI(4));
+	if(!IsNull(last_format.paper))
+		iw.Fill(IsDarkContent() ? DarkTheme(last_format.paper) : last_format.paper);
+	iw.Stroke(1, SLtBlue());
+	Size tsz = GetTextSize(txt, fnt);
+	iw.DrawText((isz - tsz.cx) / 2, last_format.sscript == 1 ? 0 : isz - fnt.GetCy(), txt, fnt,
+	            IsDarkContent() ? DarkTheme(last_format.ink) : last_format.ink);
+	last_format_img = iw;
+	RefreshBar();
+}
+
+void RichEdit::LastCharFormat()
+{
+	RichText::FormatInfo fi;
+	(RichPara::CharFormat&)fi = last_format;
+	fi.paravalid = 0;
+	fi.charvalid =
+		RichText::BOLD|
+		RichText::ITALIC|
+		RichText::UNDERLINE|
+		RichText::FACE|
+		RichText::HEIGHT|
+		RichText::INK|
+		RichText::PAPER|
+		RichText::SSCRIPT|
+		RichText::CAPITALS|
+		RichText::STRIKEOUT;
+	auto bak = last_format;
+	ApplyFormatInfo(fi);
+	SetLastCharFormat(bak);
+}
+
 void RichEdit::ShowFormat()
 {
 	RefreshBar();
@@ -218,7 +274,7 @@ void RichEdit::ShowFormat()
 		face <<= Null;
 
 	if(formatinfo.charvalid & RichText::HEIGHT)
-		height <<= DotToPt(formatinfo.GetHeight());
+		height <<= DotToPt(formatinfo.GetHeight(), unit);
 	else
 		height <<= Null;
 
