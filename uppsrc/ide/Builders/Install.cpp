@@ -23,7 +23,7 @@ RELEASE_LINKMODE = "1";
 RELEASE_OPTIONS = "-O3 -ffunction-sections -fdata-sections";
 RELEASE_FLAGS = "";
 RELEASE_LINK = "";
-DEBUGGER = "gdb";
+DEBUGGER = "lldb";
 ALLOW_PRECOMPILED_HEADERS = "0";
 DISABLE_BLITZ = "0";
 PATH = "";
@@ -160,7 +160,7 @@ void CreateBuildMethods()
 			bm.Replace(var, h);
 		};
 		
-		Path("$INCLUDE$", "/opt/local/include;/usr/include;/usr/local/include;/opt/homebrew/include;/opt/homebrew/opt/openssl/include;/Library/Developer/CommandLineTools/SDKs/MacOSX15.2.sdk/usr/include/c++/v1");
+		Path("$INCLUDE$", "/opt/local/include;/usr/include;/usr/local/include;/opt/homebrew/include;/opt/homebrew/opt/openssl/include");
 		Path("$LIB$", "/opt/local/lib;/usr/lib;/usr/local/lib;/opt/homebrew/lib;/opt/homebrew/opt/openssl/lib");
 		
 		String common;
