@@ -19,11 +19,6 @@ int CountLinesOptimized(Stream& s)
 		const byte *p = s.GetSzPtr(sz);
 		if(sz) {
 			const byte *e = p + sz;
-			const byte *e4 = p + (sz & ~3);
-			while(p < e4) {
-				n += (p[0] == '\n' || p[1] == '\n' || p[2] == '\n' || p[3] == '\n');
-				p += 4;
-			}
 			while(p < e)
 				n += *p++ == '\n';
 		}
@@ -34,8 +29,39 @@ int CountLinesOptimized(Stream& s)
 			n += c == '\n';
 		}
 	}
-	return n;
 }
+
+#ifdef CPU_SIMD
+int CountLinesOptimizedSIMD(Stream& s)
+{
+	int n = 0;
+
+	for(;;) {
+		int sz;
+		const byte* p = s.GetSzPtr(sz);
+
+		if (sz) {
+			const byte* e = p + sz;
+			const byte* e16 = p + (sz & ~15);  // Process in 16-byte chunks
+			i8x16 q = i8all('\n');
+			while(p < e16) {
+				n += CountTrue(i8x16(p) == q);
+				p += 16;
+			}
+			
+			while (p < e) { // Process remaining bytes (less than 16)
+				n += (*p++ == '\n');
+			}
+		}
+		else {
+			int c = s.Get();
+			if(c < 0)
+				return n;
+			n += (c == '\n');
+		}
+	}
+}
+#endif
 
 CONSOLE_APP_MAIN
 {
@@ -58,4 +84,12 @@ CONSOLE_APP_MAIN
 		FileIn in(arg[0]);
 		RDUMP(CountLinesOptimized(in));
 	}
+
+#ifdef CPU_SIMD
+	{
+		RTIMESTOP("Optimized SIMD");
+		FileIn in(arg[0]);
+		RDUMP(CountLinesOptimizedSIMD(in));
+	}
+#endif
 }
