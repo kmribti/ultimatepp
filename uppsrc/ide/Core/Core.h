@@ -300,8 +300,11 @@ public:
 Nest& MainNest();
 
 String GetUppOut();
+String GetVarsIncludes();
 
 String DefaultHubFilePath();
+
+bool   IsExternalMode();
 
 void   SetHubDir(const String& path);
 void   OverrideHubDir(const String& path);
@@ -325,6 +328,7 @@ String GetUppDir();
 void   SetVar(const String& var, const String& val, bool save = true);
 void   SetMainNest(const String& n);
 String GetAssemblyId();
+String PackageFilePath(const String& path);
 
 String GetCurrentBuildMethod();
 String GetCurrentMainPackage();
@@ -339,6 +343,7 @@ String SourcePath(const String& package, const String& name);
 inline
 String PackageDirectory(const String& name) { return GetFileDirectory(PackagePath(name)); }
 bool   IsNestReadOnly(const String& path);
+bool   IsExternalPackage(const String& folder);
 
 String GetPackagePathNest(const String& path);
 

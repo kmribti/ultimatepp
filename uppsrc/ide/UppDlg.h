@@ -102,6 +102,8 @@ int FilterPackageName(int c);
 struct NestEditorDlg : public WithNestEditorLayout<TopWindow> {
     NestEditorDlg();
     
+    bool firstbold = true;
+    
 	void   Set(const String& nests);
 	String Get() const;
 
@@ -119,6 +121,7 @@ public:
 
 private:
     void OnUpp();
+    void Sync();
 
 private:
     bool               new_base;
@@ -207,7 +210,6 @@ struct SelectPackageDlg : public WithSelectPackageLayout<TopWindow> {
 	void           OnBase();
 	void           OnFilter();
 
-	void           ListCursor();
 	void           ChangeDescription();
 	
 	String         LRUFilePath();
@@ -273,6 +275,9 @@ struct UppList : FileList {
 	                   dword style) const;
 };
 
+void SyncPackage(const String& active, Package& actual);
+void SyncEmptyPackage(const String& p);
+
 struct WorkspaceWork {
 	static    Font ListFont();
 
@@ -311,6 +316,7 @@ struct WorkspaceWork {
 	bool         organizer;
 	bool         showtime;
 	bool         sort;
+	bool         noemptyload = false; // in external mode, do not load files if package is empty (todo: refactor whole thing)
 	
 	Index<String> errorfiles;
 
@@ -392,6 +398,7 @@ struct WorkspaceWork {
 	void ToggleIncludeable();
 
 	void AddNormalUses();
+	void AddFolderUses();
 	void AddAnyUses();
 	void TogglePackageSpeed();
 
@@ -409,7 +416,6 @@ struct WorkspaceWork {
 
 	void PackageMenu(Bar& bar);
 	void FileMenu(Bar& bar);
-	void SpecialFileMenu(Bar& bar);
 	void InsertSpecialMenu(Bar& menu);
 
 	String PackagePathA(const String& pn);
