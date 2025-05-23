@@ -11,8 +11,8 @@ void InvalidatePackageInfo(const String& name)
 
 PackageInfo GetPackageInfo(const String& name)
 {
-	String path = PackagePath(name);
-	Time tm = FileGetTime(PackageFilePath(path));
+	String path = PackageFile(name);
+	Time tm = FileGetTime(path);
 	int q = sPi.Find(name);
 	if(q >= 0) {
 		if(path == sPi[q].path && tm == sPi[q].stamp)
@@ -215,18 +215,6 @@ BaseSetupDlg::BaseSetupDlg()
 	DirSelect(upv, upv_sel);
 	upv.NullText(GetHubDir());
 	output.NullText(GetDefaultUppOut());
-	
-	source_masks.AddList("*.cpp *.h");
-	source_masks.AddList("*.cpp *.h *.hpp *.c *.cxx *.cc *.m *.mm");
-	source_masks.AddList("*.cpp *.h *.hpp *.c *.cxx *.cc *.m *.mm *.cs *.java *.js *.ts *.tsx *.jsx");
-	
-	external << [=] { Sync(); };
-	Sync();
-}
-
-void BaseSetupDlg::Sync()
-{
-	source_masks.Enable(external);
 }
 
 bool BaseSetupDlg::Run(String& vars)
@@ -236,8 +224,6 @@ bool BaseSetupDlg::Run(String& vars)
 	include  <<= GetVar("INCLUDE");
 	upv      <<= GetVar("UPPHUB");
 	all      <<= GetVar("_all") == "1";
-	external <<= GetVar("EXTERNAL") == "1";
-	source_masks <<= GetVar("SOURCE_MASKS");
 	base     <<= vars;
 	new_base = IsNull(vars);
 
@@ -262,8 +248,6 @@ bool BaseSetupDlg::Run(String& vars)
 		SetVar("INCLUDE", ~include);
 		SetVar("UPPHUB", ~upv);
 		SetVar("_all", all ? "1" : "0");
-		SetVar("EXTERNAL", external ? "1" : "0");
-		SetVar("SOURCE_MASKS", ~source_masks);
 		Vector<String> paths = SplitDirs(upp.GetText().ToString());
 		for(int i = 0; i < paths.GetCount(); i++)
 			RealizeDirectory(paths[i]);

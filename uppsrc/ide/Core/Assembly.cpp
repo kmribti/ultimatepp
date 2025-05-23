@@ -1,37 +1,5 @@
 #include "Core.h"
 
-String GetLocalDir()
-{
-	return ConfigFile("UppLocal");
-}
-
-String LocalPath(const String& filename)
-{
-	return AppendFileName(GetLocalDir(), filename);
-}
-
-String FollowCygwinSymlink(const String& file) {
-	for(String fn = file;;) {
-		if(fn.IsEmpty())
-			return fn;
-		FileIn fi(fn);
-		if(!fi.IsOpen())
-			return fn;
-		char buffer[10];
-		if(!fi.GetAll(buffer, 10) || memcmp(buffer, "!<symlink>", 10))
-			return fn;
-		fn = NormalizePath(LoadStream(fi), GetFileDirectory(fn));
-	}
-}
-
-Vector<String> SplitDirs(const char *s) {
-#ifdef PLATFORM_POSIX
-	return Split(s, [](int c) { return findarg(c, ';', ':') >= 0 ? c : 0; });
-#else
-	return Split(s, ';');
-#endif
-}
-
 static String varsname = "default";
 
 String GetVarsName()
@@ -106,45 +74,6 @@ String Nest::Get(const String& id)
 	return var.Get(id, String());
 }
 
-void Nest::Set(const String& id, const String& val)
-{
-	var.GetAdd(id) = val;
-	InvalidatePackageCache();
-}
-
-String Nest::PackagePath0(const String& name)
-{
-	String uppfile = NativePath(name);
-	if(IsFullPath(uppfile))
-		return NormalizePath(uppfile);
-	String pname = GetFileName(uppfile);
-	Vector<String> d = GetUppDirs();
-	if(IsExternalMode() && name == "@" + GetVarsName())
-		return (d.GetCount() ? d[0] : GetUppDir()) + "/" + pname + ".upp";
-	String p;
-	for(int i = 0; i < d.GetCount(); i++) {
-		p = NormalizePath(AppendFileName(AppendFileName(d[i], uppfile), pname) + ".upp");
-		if(FileExists(p)) return p;
-	}
-	return d.GetCount() ? NormalizePath(AppendFileName(AppendFileName(d[0], uppfile), pname) + ".upp") : String();
-}
-
-String Nest::PackagePath(const String& name)
-{
-	int q = package_cache.Find(name);
-	if(q < 0) {
-		String h = PackagePath0(name);
-		package_cache.Add(name, h);
-		return h;
-	}
-	return package_cache[q];
-}
-
-Nest& MainNest()
-{
-	return Single<Nest>();
-}
-
 bool SaveVars(const char *name)
 {
 	if(!MainNest().Save(VarFilePath(name)))
@@ -202,8 +131,8 @@ void OverrideHubDir(const String& path)
 }
 
 bool   IsExternalMode()
-{ // use TheIDE as editor/analyser, packages are stored separately, no compilation
-	return GetVar("EXTERNAL") == "1";
+{ // Any folder can be package, .upp files are not stored in packages (but in cfg/external)
+	return GetVarsName() == "[external]";
 }
 
 String GetHubDir()
@@ -294,6 +223,45 @@ bool IsHubDir(const String& path)
 	return NormalizePath(path).StartsWith(GetHubDir());
 }
 
+void Nest::Set(const String& id, const String& val)
+{
+	var.GetAdd(id) = val;
+	InvalidatePackageCache();
+}
+
+String Nest::PackageDirectory0(const String& name)
+{
+	String uppfile = NativePath(name);
+	if(IsFullPath(uppfile))
+		return NormalizePath(uppfile);
+	if(IsExternalMode()) // name must be full directory path in external mode
+		return String();
+	String pname = GetFileName(uppfile);
+	Vector<String> d = GetUppDirs();
+	for(int i = 0; i < d.GetCount(); i++) {
+		String dir = NormalizePath(AppendFileName(d[i], uppfile));
+		if(IsDirectoryPackage(dir))
+			return dir;
+	}
+	return d.GetCount() ? NormalizePath(AppendFileName(AppendFileName(d[0], uppfile), pname) + ".upp") : String();
+}
+
+String Nest::PackageDirectory(const String& name)
+{
+	int q = package_cache.Find(name);
+	if(q < 0) {
+		String h = PackageDirectory0(name);
+		package_cache.Add(name, h);
+		return h;
+	}
+	return package_cache[q];
+}
+
+Nest& MainNest()
+{
+	return Single<Nest>();
+}
+
 void Nest::InvalidatePackageCache()
 {
 	package_cache.Clear();
@@ -308,21 +276,4 @@ String GetUppDir() {
 #ifdef PLATFORM_POSIX
 	return s.GetCount() == 0 ? GetHomeDirectory() : s[0];
 #endif
-}
-
-String PackageFilePath(const String& path)
-{ // in external mode we are storing packages into .config
-	if(IsExternalMode()) {
-		String n = GetPackagePathNest(path);
-		String p = GetFileName(path);
-		if(IsNull(n) || n.GetCount() + 1 >= p.GetCount())
-			return path;
-		p = UnixPath(p.Mid(n.GetCount() + 1));
-		p.Replace("\\", "%");
-		p.Replace("/", "%");
-		p = ConfigFile("external/" + GetVarsName()) + "/" + p;
-		RealizePath(p);
-		return p;
-	}
-	return path;
 }

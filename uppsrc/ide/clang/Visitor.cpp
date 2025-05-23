@@ -108,6 +108,7 @@ String ClangCursorInfo::Id()
 {
 	if(!hasid) {
 		String m, s;
+		const char *p;
 		int q = 0;
 		switch(cursorKind) {
 		case CXCursor_StructDecl:
@@ -125,14 +126,16 @@ String ClangCursorInfo::Id()
 		case CXCursor_CXXMethod:
 #ifdef UBUNTU2204_WORKAROUND
 			s = RawId();
-			m = CleanupId(s);
-			if(s.StartsWith("template ")) { // template class method already seems to contain some scope, sometimes
-				int p = m.Find('(');
-				for(;;) { // remove any scope
-					int q = m.Find("::");
-					if(q < 0 || q >= p)
-						break;
-					m = m.Mid(q + 2);
+			p = s;
+			while(*p == '&' || *p == '*') // fix CleanupId("&Accel(int (*filter)(int))") -> Accel(int(*filter)())
+				p++;
+			m = CleanupId(p);
+			{ // remove any scope
+				int q = m.Find('(');
+				if(q >= 0) {
+					q = m.ReverseFind("::", q);
+					if(q >= 0)
+						m = m.Mid(q + 2);
 				}
 			}
 			while(findarg(m[q], ':', '*', '&', '(', ')', ' ') >= 0)
