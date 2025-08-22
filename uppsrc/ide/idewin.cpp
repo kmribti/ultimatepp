@@ -349,7 +349,8 @@ void Ide::Layout()
 	
 		int x = 0;
 
-		menubar.LeftPos(0, mw).VCenterPos(menubar.GetStdHeight());
+		int mh = menubar.GetStdHeight();
+		menubar.LeftPos(0, mw).TopPos((cm.height - mh) / 2, mh);
 		x += mw;
 
 		if(toolbar_in_row) {
@@ -465,6 +466,24 @@ CursorInfoCtrl::CursorInfoCtrl()
 	IgnoreMouse();
 }
 
+struct FitTextDisplay : Display {
+	void Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const override {
+		Font font = StdFont();
+		WString txt = (~q).ToWString();
+		Size tsz;
+		for(;;) {
+			tsz = GetTextSize(txt, font);
+			int fh = font.GetHeight();
+			if(tsz.cx <= r.GetWidth() || fh < 10)
+				break;
+			font.Height(font.GetHeight() - 1);
+		}
+		w.DrawRect(r, paper);
+		w.DrawText(r.left, r.top + (tsz.cy < 4 * r.GetHeight() / 3 ?  (r.Height() - tsz.cy) / 2 : 0), // allow negative tt if only slightly bigger
+		           txt, font, ink);
+	}
+};
+
 Ide::Ide()
 {
 	DiffDlg::WhenHighlight = callback(HighlightLine);
@@ -575,12 +594,14 @@ Ide::Ide()
 	mainconfiglist <<= THISBACK(OnMainConfigList);
 	mainconfiglist.NoDropFocus();
 	mainconfiglist.NoWantFocus();
+	mainconfiglist.ValueDisplay(Single<FitTextDisplay>());
 
 	buildmode.WhenClick = THISBACK(SetupOutputMode);
 	buildmode.NoWantFocus();
 	buildmode.Tip("Output mode");
 	buildmode.AddButton().Tip("Build method").Left() <<= THISBACK(DropMethodList);
 	buildmode.AddButton().Tip("Build mode") <<= THISBACK(DropModeList);
+	buildmode.SetDisplay(Single<FitTextDisplay>());
 	methodlist.Normal();
 	methodlist.WhenSelect = THISBACK(SelectMethod);
 	modelist.Normal();
