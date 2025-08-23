@@ -297,9 +297,9 @@ String Stream::GetLine() {
 		}
 		result.Cat(c);
 	}
-	if(*result.Last() == '\r')
-		result.Trim(result.GetLength() - 1);
-	return result;
+       if(!result.IsEmpty() && *result.Last() == '\r')
+               result.Trim(result.GetLength() - 1);
+       return result;
 }
 
 void Stream::PutUtf8(int c)
