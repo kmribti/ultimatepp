@@ -282,6 +282,7 @@ protected:
 	ParentCtrl                 files_pane;
 	FileList                   files;
 	DropList                   recent;
+	DropList                   extension;
 
 	SelectDirButton            seldir1;
 	WithDropChoice<EditString> dir1;
@@ -311,11 +312,19 @@ protected:
 	
 	enum { NORMAL_FILE, DELETED_FILE, NEW_FILE, FAILED_FILE, PATCHED_FILE };
 	
-	Array<Tuple<String, String, String, int>> list;
+	struct FileInfo {
+		String file;
+		String path1;
+		String path2;
+		Time   time;
+		int    kind;
+	};
+	
+	Array<FileInfo> list;
 
-	static bool FileEqual(const String& f1, const String& f2, int& n);
+	static bool FileEqual(const String& f1, const String& f2, int& kind);
 
-	void GatherFilesDeep(Index<String>& files, const String& base, const String& path);
+	void GatherFilesDeep(VectorMap<String, Time>& files, const String& base, const String& path);
 	void Compare();
 	void ShowResult();
 	void ClearFiles();
