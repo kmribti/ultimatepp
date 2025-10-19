@@ -1,0 +1,13 @@
+description "Calculadora SDL2GL con interfaz vectorial escalable\377";
+
+uses
+    CtrlLib,
+    Painter,
+    VirtualGui/SDL2GL;
+
+file
+    Calculator.cpp;
+
+mainconfig
+    "" = "GUI SDL2GL";
+
