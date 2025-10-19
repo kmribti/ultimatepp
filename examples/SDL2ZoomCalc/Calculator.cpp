@@ -6,6 +6,7 @@
 
 using namespace Upp;
 
+struct CalcButton : Moveable<CalcButton> {
 struct CalcButton {
     String label;
     Rectf  rect;
@@ -124,6 +125,44 @@ void CalculatorCtrl::CreateButtons()
     }
 }
 
+namespace {
+
+Painter& RoundedRectPath(Painter& painter, const Rectf& rect, double radius)
+{
+    double rx = min(radius, rect.GetWidth() / 2.0);
+    double ry = min(radius, rect.GetHeight() / 2.0);
+    double x  = rect.left;
+    double y  = rect.top;
+    double cx = rect.GetWidth();
+    double cy = rect.GetHeight();
+
+    return painter
+        .Move(x + rx, y)
+        .Arc(x + rx, y + ry, rx, ry, -M_PI / 2, -M_PI / 2)
+        .Line(x, y + cy - ry)
+        .Arc(x + rx, y + cy - ry, rx, ry, M_PI, -M_PI / 2)
+        .Line(x + cx - rx, y + cy)
+        .Arc(x + cx - rx, y + cy - ry, rx, ry, M_PI / 2, -M_PI / 2)
+        .Line(x + cx, y + ry)
+        .Arc(x + cx - rx, y + ry, rx, ry, 0, -M_PI / 2)
+        .Line(x + rx, y)
+        .Close();
+}
+
+void FillRoundedRect(Painter& painter, const Rectf& rect, double radius, const Color& fill)
+{
+    RoundedRectPath(painter, rect, radius);
+    painter.Fill(fill);
+}
+
+void StrokeRoundedRect(Painter& painter, const Rectf& rect, double radius, double width, const Color& stroke)
+{
+    RoundedRectPath(painter, rect, radius);
+    painter.Stroke(width, stroke);
+}
+
+}
+
 void CalculatorCtrl::Paint(Draw& w)
 {
     Size sz = GetSize();
@@ -140,6 +179,7 @@ void CalculatorCtrl::Paint(Draw& w)
 
     Rectf display_rect(margin, margin, design_width - margin, margin + display_height);
 
+    FillRoundedRect(p, display_rect, 18, Color(0x22, 0x26, 0x32));
     p.RoundJoin().RoundCap();
     p.RoundRect(display_rect, 18).Fill(Color(0x22, 0x26, 0x32));
 
@@ -161,6 +201,8 @@ void CalculatorCtrl::Paint(Draw& w)
         Color fill = b.color;
         if(i == pressed_index)
             fill = Blend(fill, White(), 70);
+        FillRoundedRect(p, b.rect, 14, fill);
+        StrokeRoundedRect(p, b.rect, 14, 2, Blend(fill, Black(), 40));
         p.RoundRect(b.rect, 14).Fill(fill);
         p.RoundRect(b.rect, 14).Stroke(2, Blend(fill, Black(), 40));
 
@@ -454,6 +496,7 @@ CONSOLE_APP_MAIN
 
     RunVirtualGui(gui, [] {
         SetDefaultCharset(CHARSET_UTF8);
+        SetLanguage(LNG_('E','S','E','S'));
         SetLanguage(LNG_SPANISH);
 
         CalculatorWindow app;
