@@ -7,6 +7,7 @@
 using namespace Upp;
 
 struct CalcButton : Moveable<CalcButton> {
+struct CalcButton {
     String label;
     Rectf  rect;
     Color  color;
@@ -179,6 +180,8 @@ void CalculatorCtrl::Paint(Draw& w)
     Rectf display_rect(margin, margin, design_width - margin, margin + display_height);
 
     FillRoundedRect(p, display_rect, 18, Color(0x22, 0x26, 0x32));
+    p.RoundJoin().RoundCap();
+    p.RoundRect(display_rect, 18).Fill(Color(0x22, 0x26, 0x32));
 
     Font history_font = SansSerif(18);
     Font display_font = SansSerif(40).Bold();
@@ -200,6 +203,8 @@ void CalculatorCtrl::Paint(Draw& w)
             fill = Blend(fill, White(), 70);
         FillRoundedRect(p, b.rect, 14, fill);
         StrokeRoundedRect(p, b.rect, 14, 2, Blend(fill, Black(), 40));
+        p.RoundRect(b.rect, 14).Fill(fill);
+        p.RoundRect(b.rect, 14).Stroke(2, Blend(fill, Black(), 40));
 
         Font btn_font = b.operator_button ? SansSerif(28).Bold() : SansSerif(26);
         Size text_sz = GetTextSize(b.label, btn_font);
@@ -492,6 +497,7 @@ CONSOLE_APP_MAIN
     RunVirtualGui(gui, [] {
         SetDefaultCharset(CHARSET_UTF8);
         SetLanguage(LNG_('E','S','E','S'));
+        SetLanguage(LNG_SPANISH);
 
         CalculatorWindow app;
         app.OpenMain();
