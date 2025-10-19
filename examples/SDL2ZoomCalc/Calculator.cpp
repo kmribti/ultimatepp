@@ -6,6 +6,7 @@
 
 using namespace Upp;
 
+struct CalcButton : Moveable<CalcButton> {
 struct CalcButton {
     String label;
     Rectf  rect;
@@ -140,6 +141,8 @@ void CalculatorCtrl::Paint(Draw& w)
 
     Rectf display_rect(margin, margin, design_width - margin, margin + display_height);
 
+    p.LineJoin(LINEJOIN_ROUND).LineCap(LINECAP_ROUND);
+    p.RoundedRectangle(display_rect, 18).Fill(Color(0x22, 0x26, 0x32));
     p.RoundJoin().RoundCap();
     p.RoundRect(display_rect, 18).Fill(Color(0x22, 0x26, 0x32));
 
@@ -161,6 +164,8 @@ void CalculatorCtrl::Paint(Draw& w)
         Color fill = b.color;
         if(i == pressed_index)
             fill = Blend(fill, White(), 70);
+        p.RoundedRectangle(b.rect, 14).Fill(fill);
+        p.RoundedRectangle(b.rect, 14).Stroke(2, Blend(fill, Black(), 40));
         p.RoundRect(b.rect, 14).Fill(fill);
         p.RoundRect(b.rect, 14).Stroke(2, Blend(fill, Black(), 40));
 
@@ -454,6 +459,7 @@ CONSOLE_APP_MAIN
 
     RunVirtualGui(gui, [] {
         SetDefaultCharset(CHARSET_UTF8);
+        SetLanguage(LNG_('E','S','E','S'));
         SetLanguage(LNG_SPANISH);
 
         CalculatorWindow app;
